@@ -5,6 +5,10 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 import org.junit.runners.Parameterized.Parameters
+import java.text.DecimalFormatSymbols
+import java.util.Locale
+
+private val SYMBOLS = DecimalFormatSymbols.getInstance(Locale.US) // Guarantee reproducibility.
 
 @RunWith(Parameterized::class)
 class AdHocFloat32Test(
@@ -14,7 +18,7 @@ class AdHocFloat32Test(
     private val expectedMantissa: Int
 ) {
     private val sut
-        get() = AdHocFloat32.fromText(decimalText)
+        get() = AdHocFloat32.fromText(decimalText, SYMBOLS)
 
     private val expectedExponent
         get() = Math.getExponent(expectedFloat)
