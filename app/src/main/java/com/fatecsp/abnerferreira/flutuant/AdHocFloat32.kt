@@ -25,13 +25,14 @@ value class AdHocFloat32(val bits: UInt) {
         fun fromText(
             text: String, symbols: DecimalFormatSymbols = DecimalFormatSymbols.getInstance()
         ): AdHocFloat32 {
-            val absDecimal = runCatching { BigDecimal(text).abs() }.getOrNull()
+            val trimmedText = text.trim()
+            val absDecimal = runCatching { BigDecimal(trimmedText).abs() }.getOrNull()
 
             if (absDecimal == null) {
                 return qNaN // Should not happen.
             }
 
-            val sign = if (text.trim().startsWith(symbols.minusSign, ignoreCase = true)) 1u else 0u
+            val sign = if (trimmedText.startsWith(symbols.minusSign, ignoreCase = true)) 1u else 0u
             val signBit = sign shl F32_SIGN_BIT_INDEX
 
             if (absDecimal.stripTrailingZeros() == BigDecimal.ZERO) {
