@@ -52,7 +52,9 @@ class AdHocFloat32Test(
             arrayOf("1.5", Float.fromBits(0x3FC00000), 0, 0x400000),
             arrayOf("12.375", Float.fromBits(0x41460000), 0, 0x460000),
             arrayOf("612.3", Float.fromBits(0x44191333), 0, 0x191333),
-            arrayOf("109328139.101230812390812", Float.fromBits(0x4CD086E1), 0, 0x5086E1)
+            arrayOf("109328139.101230812390812", Float.fromBits(0x4CD086E1), 0, 0x5086E1),
+            arrayOf("999999999999999999999999999999999999991", Float.POSITIVE_INFINITY, 0, 0),
+            arrayOf("-999999999999999999999999999999999999991", Float.NEGATIVE_INFINITY, 1, 0)
         )
     }
 }

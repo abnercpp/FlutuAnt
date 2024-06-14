@@ -21,11 +21,12 @@ value class AdHocFloat32(val bits: UInt) {
 
         // `BigDecimal.TWO` is not supported on Android
         @JvmStatic
-        private val BIG_TWO = BigDecimal("2")
+        private val BIG_TWO = 2.toBigDecimal()
 
         @JvmStatic
         fun fromText(
-            text: String, symbols: DecimalFormatSymbols = DecimalFormatSymbols.getInstance()
+            text: String,
+            symbols: DecimalFormatSymbols = DecimalFormatSymbols.getInstance()
         ): AdHocFloat32 {
             // We need to replace the local-specific decimal separator with the standard one.
             val normalizedText =
@@ -68,7 +69,7 @@ value class AdHocFloat32(val bits: UInt) {
             val normalizedBits = (whole shl fractionBitLen) or fractionBits.toLong().toBigInteger()
 
             if (normalizedBits == BigInteger.ZERO) {
-                // Truncate after 44 leading zeros. We ran out of patience. And space. Mostly space.
+                // We ran out of patience. And space. Mostly space.
                 return AdHocFloat32(shiftedSignBit)
             }
 
@@ -80,8 +81,8 @@ value class AdHocFloat32(val bits: UInt) {
             }
             val exponentBits = (exponent + F32_EXPONENT_BIAS).toUInt()
 
-            var mantissa =
-                normalizedBits xor (BigInteger.ONE shl (mantissaBitLen)) // Remove implicit one.
+            // Remove implicit one.
+            var mantissa = normalizedBits xor (BigInteger.ONE shl (mantissaBitLen))
 
             if (mantissaBitLen < F32_EXPONENT_BIT_LEN) {
                 mantissa = mantissa shl (F32_EXPONENT_BIT_LEN - mantissaBitLen)
