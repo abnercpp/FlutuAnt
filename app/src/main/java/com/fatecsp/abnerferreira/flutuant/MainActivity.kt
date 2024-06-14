@@ -72,7 +72,7 @@ fun ConverterApp(modifier: Modifier = Modifier) {
             onValueChange = { input = it },
             label = { Text(stringResource(id = R.string.enter_real_number)) },
             modifier = Modifier.fillMaxWidth(),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
         )
         Button(
             onClick = { result = AdHocFloat32.fromText(input.text, decimalFormatSymbols) },
