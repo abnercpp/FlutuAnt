@@ -11,6 +11,7 @@ private const val F32_SIGN_BIT_MASK = 0x80000000u
 private const val F32_SIGN_BIT_INDEX = Float.SIZE_BITS - 1
 private const val F32_EXPONENT_BIT_LEN = 23
 private const val F32_EXPONENT_BIAS = 127
+private const val F32_PADDING_BITS = ULong.SIZE_BITS // Needs to be larger than 32 bits!
 
 @JvmInline
 value class AdHocFloat32(val bits: UInt) {
@@ -42,27 +43,35 @@ value class AdHocFloat32(val bits: UInt) {
             val shiftedSignBit = sign shl F32_SIGN_BIT_INDEX
 
             if (absDecimal.stripTrailingZeros() == BigDecimal.ZERO) {
-                return AdHocFloat32(sign shl F32_SIGN_BIT_INDEX)
+                return AdHocFloat32(shiftedSignBit)
             }
 
             val whole = absDecimal.toBigInteger()
             var fraction = absDecimal % BigDecimal.ONE
 
-            var fractionBits = 0u
+            var fractionBits = 0uL
             var fractionBitLen = 0
 
-            while (fractionBitLen < Float.SIZE_BITS && fraction.stripTrailingZeros() != BigDecimal.ZERO) {
-                fractionBitLen++
+            while (fractionBitLen < F32_PADDING_BITS
+                && fraction.stripTrailingZeros() != BigDecimal.ZERO
+            ) {
                 val mul = fraction * BIG_TWO
                 fraction = mul % BigDecimal.ONE
-                val currentFractionBit = mul.toInt().toUInt() shl (Float.SIZE_BITS - fractionBitLen)
-                fractionBits = fractionBits or currentFractionBit
+                val currentFractionBit = mul.toInt().toUInt()
+                fractionBitLen++
+                val shiftedBit = currentFractionBit.toULong() shl F32_PADDING_BITS - fractionBitLen
+                fractionBits = fractionBits or shiftedBit
             }
 
-            fractionBits = fractionBits shr Float.SIZE_BITS - fractionBitLen
+            fractionBits = fractionBits shr (F32_PADDING_BITS - fractionBitLen)
 
-            val normalizedBits =
-                (whole shl fractionBitLen) or fractionBits.toULong().toLong().toBigInteger()
+            val normalizedBits = (whole shl fractionBitLen) or fractionBits.toLong().toBigInteger()
+
+            if (normalizedBits == BigInteger.ZERO) {
+                // Truncate after 44 leading zeros. We ran out of patience. And space. Mostly space.
+                return AdHocFloat32(shiftedSignBit)
+            }
+
             var mantissaBitLen = normalizedBits.bitLength() - 1
 
             val exponent = mantissaBitLen - fractionBitLen

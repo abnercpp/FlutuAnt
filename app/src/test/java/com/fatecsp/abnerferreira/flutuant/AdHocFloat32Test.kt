@@ -43,6 +43,7 @@ class AdHocFloat32Test(
             arrayOf("-1", Float.fromBits((0xBF800000).toInt()), 1, 0),
             arrayOf("-0", Float.fromBits((0x80000000u).toInt()), 1, 0),
             arrayOf("0", Float.fromBits(0), 0, 0),
+            arrayOf("0.003", Float.fromBits(0x3B449BA6), 0, 0x449BA6),
             arrayOf("0.12678", Float.fromBits(0x3E01D29E), 0, 0x1D29E),
             arrayOf("0.3", Float.fromBits(0x3E99999A), 0, 0x19999A),
             arrayOf("0.5", Float.fromBits(0x3F000000), 0, 0),
