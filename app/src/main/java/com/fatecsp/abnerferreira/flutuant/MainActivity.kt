@@ -111,7 +111,7 @@ fun ResultView(result: AdHocFloat32) {
             )
             ResultRow(
                 title = stringResource(id = R.string.exponent_decimal),
-                value = result.biasedExponent.toString()
+                value = result.exponent.toString()
             )
             ResultRow(
                 title = stringResource(id = R.string.exponent_binary_bias),
