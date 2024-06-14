@@ -11,7 +11,7 @@ private const val F32_SIGN_BIT_MASK = 0x80000000u
 private const val F32_SIGN_BIT_INDEX = Float.SIZE_BITS - 1
 private const val F32_EXPONENT_BIT_LEN = 23
 private const val F32_EXPONENT_BIAS = 127
-private const val F32_PADDING_BITS = ULong.SIZE_BITS // Needs to be larger than 32 bits!
+private const val F32_EXPONENT_AREA = F32_EXPONENT_BIAS * 2
 
 @JvmInline
 value class AdHocFloat32(val bits: UInt) {
@@ -50,23 +50,24 @@ value class AdHocFloat32(val bits: UInt) {
             val whole = absDecimal.toBigInteger()
             var fraction = absDecimal % BigDecimal.ONE
 
-            var fractionBits = 0uL
+            var fractionBits = BigInteger.ZERO
             var fractionBitLen = 0
 
-            while (fractionBitLen < F32_PADDING_BITS
+            while (fractionBitLen < F32_EXPONENT_AREA
                 && fraction.stripTrailingZeros() != BigDecimal.ZERO
             ) {
                 val mul = fraction * BIG_TWO
                 fraction = mul % BigDecimal.ONE
                 val currentFractionBit = mul.toInt().toUInt()
                 fractionBitLen++
-                val shiftedBit = currentFractionBit.toULong() shl F32_PADDING_BITS - fractionBitLen
+                val shiftedBit = currentFractionBit.toLong()
+                    .toBigInteger() shl F32_EXPONENT_AREA - fractionBitLen
                 fractionBits = fractionBits or shiftedBit
             }
 
-            fractionBits = fractionBits shr (F32_PADDING_BITS - fractionBitLen)
+            fractionBits = fractionBits shr (F32_EXPONENT_AREA - fractionBitLen)
 
-            val normalizedBits = (whole shl fractionBitLen) or fractionBits.toLong().toBigInteger()
+            val normalizedBits = (whole shl fractionBitLen) or fractionBits
 
             if (normalizedBits == BigInteger.ZERO) {
                 // We ran out of patience. And space. Mostly space.
