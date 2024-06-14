@@ -2,7 +2,9 @@ package com.fatecsp.abnerferreira.flutuant
 
 import java.math.BigDecimal
 import java.math.BigInteger
+import java.math.RoundingMode
 import java.text.DecimalFormatSymbols
+import kotlin.math.max
 
 private const val F32_qNaN_BITS = 0x7FC00000u
 private const val F32_INFINITY_BITS = 0x7F800000u
@@ -12,16 +14,21 @@ private const val F32_SIGN_BIT_INDEX = Float.SIZE_BITS - 1
 private const val F32_EXPONENT_BIT_LEN = 23
 private const val F32_EXPONENT_BIAS = 127
 private const val F32_EXPONENT_AREA = F32_EXPONENT_BIAS * 2
+private const val F32_EXPONENT_SUBNORMAL_OR_ZERO = -126
+private const val F32_NORMAL_SCALE_MAX = 45
+
+// `BigDecimal.TWO` is not supported on Android
+private val BIG_TWO = 2.toBigDecimal()
+
+private val F32_NORMAL_MIN = BigDecimal(1.1754943508222875E-38)
+private val F32_SUBNORMAL_MAX = BigDecimal(1.1754942106924411E-38)
+private val F32_SPLIT = (F32_NORMAL_MIN + F32_SUBNORMAL_MAX).divide(BIG_TWO, RoundingMode.HALF_EVEN)
 
 @JvmInline
 value class AdHocFloat32(val bits: UInt) {
     companion object {
         @JvmStatic
         private val qNaN = AdHocFloat32(F32_qNaN_BITS)
-
-        // `BigDecimal.TWO` is not supported on Android
-        @JvmStatic
-        private val BIG_TWO = 2.toBigDecimal()
 
         @JvmStatic
         fun fromText(
@@ -40,50 +47,73 @@ value class AdHocFloat32(val bits: UInt) {
                 return qNaN
             }
 
-            val sign = if (normalizedText.startsWith('-', ignoreCase = true)) 1u else 0u
-            val shiftedSignBit = sign shl F32_SIGN_BIT_INDEX
+            val sign = if (normalizedText.startsWith('-')) 1u else 0u
+            val okSignBit = sign shl F32_SIGN_BIT_INDEX
 
             if (absDecimal.stripTrailingZeros() == BigDecimal.ZERO) {
-                return AdHocFloat32(shiftedSignBit)
+                return AdHocFloat32(okSignBit)
             }
 
             val whole = absDecimal.toBigInteger()
             var fraction = absDecimal % BigDecimal.ONE
-
+            val isNormalFraction = fraction.isNormalF32()
+            if (isNormalFraction) {
+                fraction = fraction.setScale(F32_NORMAL_SCALE_MAX, RoundingMode.HALF_EVEN)
+            }
+            var remainder = fraction
             var fractionBits = BigInteger.ZERO
             var fractionBitLen = 0
 
             while (fractionBitLen < F32_EXPONENT_AREA
-                && fraction.stripTrailingZeros() != BigDecimal.ZERO
+                && remainder.stripTrailingZeros() != BigDecimal.ZERO
             ) {
-                val mul = fraction * BIG_TWO
-                fraction = mul % BigDecimal.ONE
-                val currentFractionBit = mul.toInt().toUInt()
+                val mul = remainder * BIG_TWO
+                remainder = mul % BigDecimal.ONE
+                val currentFractionBit = mul.toInt().toUInt().toLong().toBigInteger()
                 fractionBitLen++
-                val shiftedBit = currentFractionBit.toLong()
-                    .toBigInteger() shl F32_EXPONENT_AREA - fractionBitLen
+                val shiftedBit = currentFractionBit shl F32_EXPONENT_AREA - fractionBitLen
                 fractionBits = fractionBits or shiftedBit
             }
 
             fractionBits = fractionBits shr (F32_EXPONENT_AREA - fractionBitLen)
 
+            if (isNormalFraction &&
+                fractionBitLen - fractionBits.bitLength() == F32_EXPONENT_BIAS - 1
+            ) {
+                fractionBitLen = F32_EXPONENT_BIAS - 1
+                fractionBits = BigInteger.ONE
+            }
+
             val normalizedBits = (whole shl fractionBitLen) or fractionBits
 
             if (normalizedBits == BigInteger.ZERO) {
                 // We ran out of patience. And space. Mostly space.
-                return AdHocFloat32(shiftedSignBit)
+                return AdHocFloat32(okSignBit)
             }
 
-            var mantissaBitLen = normalizedBits.bitLength() - 1
+            var mantissaBitLen = normalizedBits.bitLength()
 
-            val exponent = mantissaBitLen - fractionBitLen
+            val exponent = mantissaBitLen - fractionBitLen - 1
             if (exponent > F32_EXPONENT_BIAS) {
-                return AdHocFloat32(shiftedSignBit or F32_INFINITY_BITS) // Overflow.
+                return AdHocFloat32(okSignBit or F32_INFINITY_BITS) // Overflow.
             }
-            val exponentBits = (exponent + F32_EXPONENT_BIAS).toUInt()
+            var biasedExponentBits = (exponent + F32_EXPONENT_BIAS).toUInt()
 
-            // Remove implicit one.
-            var mantissa = normalizedBits xor (BigInteger.ONE shl (mantissaBitLen))
+            var mantissa =
+                // Remove implicit one for normal numbers.
+                if (exponent >= F32_EXPONENT_SUBNORMAL_OR_ZERO ||
+                    exponent == F32_EXPONENT_SUBNORMAL_OR_ZERO - 1 && isNormalFraction
+                ) {
+                    mantissaBitLen -= 1
+                    normalizedBits xor (BigInteger.ONE shl mantissaBitLen)
+                } else {
+                    // Add implicit zero for subnormal numbers.
+                    biasedExponentBits = 0u
+                    val leadingZeros = F32_EXPONENT_SUBNORMAL_OR_ZERO - exponent - 1
+                    val mantissaWithImplicitZero = normalizedBits shr leadingZeros
+                    mantissaBitLen = mantissaWithImplicitZero.bitLength() + leadingZeros
+                    mantissaWithImplicitZero
+                }
 
             if (mantissaBitLen < F32_EXPONENT_BIT_LEN) {
                 mantissa = mantissa shl (F32_EXPONENT_BIT_LEN - mantissaBitLen)
@@ -103,7 +133,7 @@ value class AdHocFloat32(val bits: UInt) {
             }
 
             val mantissaBits = mantissa.toInt().toUInt()
-            val f32Bits = shiftedSignBit or (exponentBits shl F32_EXPONENT_BIT_LEN) or mantissaBits
+            val f32Bits = okSignBit or (biasedExponentBits shl F32_EXPONENT_BIT_LEN) or mantissaBits
             return AdHocFloat32(f32Bits)
         }
     }
@@ -116,10 +146,12 @@ val AdHocFloat32.biasedExponent
     get() = ((bits and F32_SIGN_BIT_MASK.inv()) shr F32_EXPONENT_BIT_LEN).toInt()
 
 val AdHocFloat32.exponent
-    get() = biasedExponent - F32_EXPONENT_BIAS
+    get() = max(biasedExponent - F32_EXPONENT_BIAS, F32_EXPONENT_SUBNORMAL_OR_ZERO)
 
 val AdHocFloat32.mantissa
     get() = (bits and F32_MANTISSA_MASK).toInt()
 
 val AdHocFloat32.stdFloat
     get() = Float.fromBits(bits.toInt())
+
+private fun BigDecimal.isNormalF32(): Boolean = this >= F32_SPLIT
