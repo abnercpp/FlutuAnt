@@ -19,7 +19,7 @@ value class AdHocFloat32(val bits: UInt) {
 
         // `BigDecimal.TWO` is not supported on Android
         @JvmStatic
-        private val BIG_TWO = BigInteger.TWO.toBigDecimal()
+        private val BIG_TWO = BigDecimal("2")
 
         @JvmStatic
         fun fromText(
