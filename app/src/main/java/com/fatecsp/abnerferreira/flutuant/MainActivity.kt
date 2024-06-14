@@ -103,7 +103,7 @@ fun ResultView(result: AdHocFloat32) {
         ) {
             ResultRow(
                 title = stringResource(id = R.string.ieee_754_hex),
-                value = "0x${result.bits.toString(16).uppercase()}"
+                value = "0x${result.bits.toString(16).padStart(8, '0').uppercase()}"
             )
             ResultRow(
                 title = stringResource(id = R.string.mantissa_binary),

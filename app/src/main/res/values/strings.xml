@@ -2,11 +2,11 @@
     <string name="app_name">FlutuAnt</string>
     <string name="enter_real_number">Digite um número real</string>
     <string name="convert_button">Converter</string>
-    <string name="ieee_754_hex">IEEE-754 (Hexadecimal):</string>
-    <string name="mantissa_binary">Mantissa (Binário):</string>
-    <string name="exponent_decimal">Expoente (Decimal sem BIAS):</string>
-    <string name="exponent_binary_bias">Expoente (Binário com BIAS):</string>
+    <string name="ieee_754_hex">IEEE-754 (hex):</string>
+    <string name="mantissa_binary">Mantissa (bin):</string>
+    <string name="exponent_decimal">Expoente (dec s/ bias):</string>
+    <string name="exponent_binary_bias">Expoente (bin c/ bias):</string>
     <string name="std_float">Float padrão:</string>
     <string name="nan_warning">O valor é inválido!</string>
-    <string name="decimal_separator_info">Separador decimal:</string>
+    <string name="decimal_separator_info">Separador decimal do dispositivo:</string>
 </resources>

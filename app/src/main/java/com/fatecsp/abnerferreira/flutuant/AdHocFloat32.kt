@@ -25,14 +25,20 @@ value class AdHocFloat32(val bits: UInt) {
         fun fromText(
             text: String, symbols: DecimalFormatSymbols = DecimalFormatSymbols.getInstance()
         ): AdHocFloat32 {
-            val trimmedText = text.trim()
-            val absDecimal = runCatching { BigDecimal(trimmedText).abs() }.getOrNull()
+            // We need to replace the local-specific decimal separator with the standard one.
+            val normalizedText =
+                text.trim()
+                    .replace(symbols.decimalSeparator, '.')
+                    .replace(symbols.minusSign, '-')
+
+            val absDecimal = runCatching { BigDecimal(normalizedText).abs() }.getOrNull()
 
             if (absDecimal == null) {
-                return qNaN // Should not happen.
+                return qNaN
             }
 
-            val sign = if (trimmedText.startsWith(symbols.minusSign, ignoreCase = true)) 1u else 0u
+            val sign = if (normalizedText.startsWith('-', ignoreCase = true)) 1u else 0u
+
             val signBit = sign shl F32_SIGN_BIT_INDEX
 
             if (absDecimal.stripTrailingZeros() == BigDecimal.ZERO) {
