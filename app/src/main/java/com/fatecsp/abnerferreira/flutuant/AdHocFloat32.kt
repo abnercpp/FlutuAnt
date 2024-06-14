@@ -5,6 +5,7 @@ import java.math.BigInteger
 import java.text.DecimalFormatSymbols
 
 private const val F32_qNaN_BITS = 0x7FC00000u
+private const val F32_INFINITY_BITS = 0x7F800000u
 private const val F32_MANTISSA_MASK = 0x7FFFFFu
 private const val F32_SIGN_BIT_MASK = 0x80000000u
 private const val F32_SIGN_BIT_INDEX = Float.SIZE_BITS - 1
@@ -38,8 +39,7 @@ value class AdHocFloat32(val bits: UInt) {
             }
 
             val sign = if (normalizedText.startsWith('-', ignoreCase = true)) 1u else 0u
-
-            val signBit = sign shl F32_SIGN_BIT_INDEX
+            val shiftedSignBit = sign shl F32_SIGN_BIT_INDEX
 
             if (absDecimal.stripTrailingZeros() == BigDecimal.ZERO) {
                 return AdHocFloat32(sign shl F32_SIGN_BIT_INDEX)
@@ -66,6 +66,9 @@ value class AdHocFloat32(val bits: UInt) {
             var mantissaBitLen = normalizedBits.bitLength() - 1
 
             val exponent = mantissaBitLen - fractionBitLen
+            if (exponent > F32_EXPONENT_BIAS) {
+                return AdHocFloat32(shiftedSignBit or F32_INFINITY_BITS) // Overflow.
+            }
             val exponentBits = (exponent + F32_EXPONENT_BIAS).toUInt()
 
             var mantissa =
@@ -89,7 +92,7 @@ value class AdHocFloat32(val bits: UInt) {
             }
 
             val mantissaBits = mantissa.toInt().toUInt()
-            val f32Bits = signBit or (exponentBits shl F32_EXPONENT_BIT_LEN) or mantissaBits
+            val f32Bits = shiftedSignBit or (exponentBits shl F32_EXPONENT_BIT_LEN) or mantissaBits
             return AdHocFloat32(f32Bits)
         }
     }
