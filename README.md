@@ -9,6 +9,8 @@ padrão [IEEE-754](https://en.wikipedia.org/wiki/IEEE_754). (Apenas para Android
 > Computadores (ILP-500), ministrada pelo professor SERGIO LUIZ BANIN, do 2º semestre do curso de Análise e
 > Desenvolvimento de Sistemas, no período matutino, da [Fatec São Paulo](https://www.fatecsp.br).
 
+![](./app-flutuant-example.gif "Exemplo Utilizando App em Emulador")
+
 ## Funcionalidades 📲
 
 Atualmente o app possui as seguintes funcionalidades:
