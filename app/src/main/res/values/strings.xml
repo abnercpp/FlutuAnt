@@ -7,6 +7,8 @@
     <string name="exponent_decimal">Expoente (dec s/ bias):</string>
     <string name="exponent_binary_bias">Expoente (bin c/ bias):</string>
     <string name="std_float">Float padrão:</string>
-    <string name="nan_warning">O valor é inválido!</string>
+    <string name="nan_warning">O texto inserido não corresponde um número válido e não pôde ser convertido.</string>
+    <string name="subnormal_warning">Número subnormal ou zero detectado: expoente fixo em %d conforme padrão.</string>
+    <string name="input_too_large">Valor absoluto do número inserido é grande demais para ser convertido.</string>
     <string name="decimal_separator_info">Separador decimal do dispositivo:</string>
 </resources>

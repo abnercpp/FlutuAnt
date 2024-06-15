@@ -154,4 +154,6 @@ val AdHocFloat32.mantissa
 val AdHocFloat32.stdFloat
     get() = Float.fromBits(bits.toInt())
 
-private fun BigDecimal.isNormalF32(): Boolean = this >= F32_SPLIT
+val AdHocFloat32.isSubnormalOrZero get() = biasedExponent == 0
+
+private fun BigDecimal.isNormalF32() = this >= F32_SPLIT

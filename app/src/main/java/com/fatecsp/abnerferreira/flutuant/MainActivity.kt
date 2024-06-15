@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
@@ -93,54 +92,55 @@ fun ConverterApp(modifier: Modifier = Modifier) {
 
 @Composable
 fun ResultView(result: AdHocFloat32) {
-    Box(
+    Column(
         modifier = Modifier
             .background(colorResource(id = R.color.background_label))
-            .padding(16.dp)
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        Column(
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            ResultRow(
-                title = stringResource(id = R.string.ieee_754_hex),
-                value = "0x${result.bits.toString(16).padStart(8, '0').uppercase()}"
-            )
-            ResultRow(
-                title = stringResource(id = R.string.mantissa_binary),
-                value = result.mantissa.toString(2).padStart(23, '0')
-            )
-            ResultRow(
-                title = stringResource(id = R.string.exponent_decimal),
-                value = result.exponent.toString()
-            )
-            ResultRow(
-                title = stringResource(id = R.string.exponent_binary_bias),
-                value = result.biasedExponent.toString(2).padStart(8, '0')
-            )
-            ResultRow(
-                title = stringResource(id = R.string.std_float),
-                value = result.stdFloat.toString()
-            )
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(40.dp) // Define a fixed height for the NaN warning box
-            ) {
-                if (result.stdFloat.isNaN()) {
-                    Box(
-                        modifier = Modifier
-                            .background(colorResource(id = R.color.background_nan_warning))
-                            .padding(8.dp)
-                    ) {
-                        Text(
-                            text = stringResource(id = R.string.nan_warning),
-                            color = MaterialTheme.colorScheme.error,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
-            }
+        ResultRow(
+            title = stringResource(id = R.string.ieee_754_hex),
+            value = "0x${result.bits.toString(16).padStart(8, '0').uppercase()}"
+        )
+        ResultRow(
+            title = stringResource(id = R.string.mantissa_binary),
+            value = result.mantissa.toString(2).padStart(23, '0')
+        )
+        ResultRow(
+            title = stringResource(id = R.string.exponent_decimal),
+            value = result.exponent.toString()
+        )
+        ResultRow(
+            title = stringResource(id = R.string.exponent_binary_bias),
+            value = result.biasedExponent.toString(2).padStart(8, '0')
+        )
+        ResultRow(
+            title = stringResource(id = R.string.std_float),
+            value = result.stdFloat.toString()
+        )
+        if (result.stdFloat.isNaN()) {
+            WarningBox(text = stringResource(id = R.string.nan_warning))
+        } else if (result.isSubnormalOrZero) {
+            WarningBox(text = stringResource(id = R.string.subnormal_warning, result.exponent))
+        } else if (result.stdFloat.isInfinite()) {
+            WarningBox(text = stringResource(id = R.string.input_too_large))
         }
+    }
+}
+
+@Composable
+fun WarningBox(text: String) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(colorResource(id = R.color.background_warning))
+            .padding(8.dp)
+    ) {
+        Text(
+            text = text,
+            color = MaterialTheme.colorScheme.error,
+            fontWeight = FontWeight.Bold
+        )
     }
 }
 

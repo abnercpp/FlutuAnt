@@ -9,7 +9,7 @@
     <color name="white">#FFFFFFFF</color>
     <color name="background_label">#E0E0E0</color>
     <color name="background_value">#F5F5F5</color>
-    <color name="background_nan_warning">#FFCCCC</color>
+    <color name="background_warning">#FFF9C4</color>
     <color name="background_info">#E3F2FD</color>
     <color name="background_separator">#F0F0F0</color>
 </resources>
