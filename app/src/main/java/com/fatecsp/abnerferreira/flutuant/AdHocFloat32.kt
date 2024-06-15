@@ -100,14 +100,14 @@ value class AdHocFloat32(val bits: UInt) {
             var biasedExponentBits = (exponent + F32_EXPONENT_BIAS).toUInt()
 
             var mantissa =
-                // Remove implicit one for normal numbers.
                 if (exponent >= F32_EXPONENT_SUBNORMAL_OR_ZERO ||
+                    // Treat most significant bit set as implicit 'one' in mantissa.
                     exponent == F32_EXPONENT_SUBNORMAL_OR_ZERO - 1 && isNormalFraction
                 ) {
                     mantissaBitLen -= 1
                     normalizedBits xor (BigInteger.ONE shl mantissaBitLen)
                 } else {
-                    // Add implicit zero for subnormal numbers.
+                    // Add implicit 'zero' for subnormal numbers.
                     biasedExponentBits = 0u
                     val leadingZeros = F32_EXPONENT_SUBNORMAL_OR_ZERO - exponent - 1
                     val mantissaWithImplicitZero = normalizedBits shr leadingZeros
